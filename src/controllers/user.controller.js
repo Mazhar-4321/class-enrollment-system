@@ -1,97 +1,87 @@
 import HttpStatus from 'http-status-codes';
 import * as UserService from '../services/user.service';
 
-/**
- * Controller to get all users available
- * @param  {object} req - request object
- * @param {object} res - response object
- * @param {Function} next
- */
-export const getAllUsers = async (req, res, next) => {
-  try {
-    const data = await UserService.getAllUsers();
-    res.status(HttpStatus.OK).json({
-      code: HttpStatus.OK,
-      data: data,
-      message: 'All users fetched successfully'
-    });
-  } catch (error) {
-    next(error);
-  }
-};
 
-/**
- * Controller to get a single user
- * @param  {object} req - request object
- * @param {object} res - response object
- * @param {Function} next
- */
-export const getUser = async (req, res, next) => {
-  try {
-    const data = await UserService.getUser(req.params._id);
-    res.status(HttpStatus.OK).json({
-      code: HttpStatus.OK,
-      data: data,
-      message: 'User fetched successfully'
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-/**
- * Controller to create a new user
- * @param  {object} req - request object
- * @param {object} res - response object
- * @param {Function} next
- */
+ 
 export const newUser = async (req, res, next) => {
   try {
-    const data = await UserService.newUser(req.body);
+    const response = await UserService.validateOtp(req.body);
+    if (response == 1) {
+      const data = await UserService.newUser(req.body);
+      res.status(HttpStatus.CREATED).json({
+        code: HttpStatus.CREATED,
+        message: 'User created successfully'
+      });
+    } else {
+      res.status(HttpStatus.NOT_ACCEPTABLE).json({
+        code: HttpStatus.NOT_ACCEPTABLE,
+        message: 'OTP Expired'
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const sendOtp = async (req, res, next) => {
+  try {
+    const data = await UserService.sendOtp(req.body);
     res.status(HttpStatus.CREATED).json({
       code: HttpStatus.CREATED,
       data: data,
-      message: 'User created successfully'
+      message: 'Otp Sent successfully'
     });
   } catch (error) {
     next(error);
   }
 };
 
-/**
- * Controller to update a user
- * @param  {object} req - request object
- * @param {object} res - response object
- * @param {Function} next
- */
-export const updateUser = async (req, res, next) => {
+export const forgetPassword = async (req, res, next) => {
   try {
-    const data = await UserService.updateUser(req.params._id, req.body);
-    res.status(HttpStatus.ACCEPTED).json({
-      code: HttpStatus.ACCEPTED,
-      data: data,
-      message: 'User updated successfully'
-    });
+    const data = await UserService.forgetPassword(req.body);
+    if (data) {
+      res.status(HttpStatus.CREATED).json({
+        code: HttpStatus.CREATED,
+        message: 'Otp Sent successfully'
+      });
+    }
   } catch (error) {
     next(error);
   }
-};
+}
 
-/**
- * Controller to delete a user
- * @param  {object} req - request object
- * @param {object} res - response object
- * @param {Function} next
- */
-export const deleteUser = async (req, res, next) => {
+export const resetPassword = async (req, res, next) => {
   try {
-    await UserService.deleteUser(req.params._id);
-    res.status(HttpStatus.OK).json({
-      code: HttpStatus.OK,
-      data: [],
-      message: 'User deleted successfully'
-    });
+    const data = await UserService.resetPassword(req.body);
+    if (data) {
+      res.status(HttpStatus.CREATED).json({
+        code: HttpStatus.CREATED,
+        message: 'Password Reset Successful'
+      });
+    }
   } catch (error) {
     next(error);
   }
-};
+}
+
+export const signInUser = async (req, res, next) => {
+  try {
+    const data = await UserService.signIn(req.body);
+    if (data) {
+      res.status(HttpStatus.OK).json({
+        code: HttpStatus.OK,
+        data: req.body.email,
+        token: data
+      });
+    } else {
+      throw new Error('Database Operation Failed')
+    }
+  } catch (error) {
+    res.status(HttpStatus.NOT_FOUND).json({
+      code: HttpStatus.NOT_FOUND,
+      error: error.message.split(":")[1],
+    });
+  }
+}
+
+
